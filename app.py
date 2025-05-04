@@ -12,17 +12,14 @@ from google import genai
 import fitz # PyMuPDF
 
 # --- Streamlit App Configuration ---
-st.set_page_config(layout="wide", page_title="Vision RAG with Cohere Embed-4")
-st.title("Vision RAG with Cohere Embed-4 🖼️")
+st.set_page_config(layout="wide", page_title="PDF Image Text Recognition and Answering")
+st.title("PDF Image Text Recognition and Answering 🖼️")
 
 # --- API Key Input ---
 with st.sidebar:
     st.header("🔑 API Keys")
     cohere_api_key = st.text_input("Cohere API Key", type="password", key="cohere_key")
     google_api_key = st.text_input("Google API Key (Gemini)", type="password", key="google_key")
-    "[Get a Cohere API key](https://dashboard.cohere.com/api-keys)"
-    "[Get a Google API key](https://aistudio.google.com/app/apikey)"
-
     st.markdown("---")
     if not cohere_api_key:
         st.warning("Please enter your Cohere API key to proceed.")
@@ -55,25 +52,6 @@ if cohere_api_key and google_api_key:
 else:
     st.info("Enter your API keys in the sidebar to start.")
 
-# Information about the models
-with st.expander("ℹ️ About the models used"):
-    st.markdown("""
-    ### Cohere Embed-4
-    
-    Cohere's Embed-4 is a state-of-the-art multimodal embedding model designed for enterprise search and retrieval. 
-    It enables:
-    
-    - **Multimodal search**: Search text and images together seamlessly
-    - **High accuracy**: State-of-the-art performance for retrieval tasks
-    - **Efficient embedding**: Process complex images like charts, graphs, and infographics
-    
-    The model processes images without requiring complex OCR pre-processing and maintains the connection between visual elements and text.
-    
-    ### Google Gemini 2.5 Flash
-    
-    Gemini 2.5 Flash is Google's efficient multimodal model that can process text and image inputs to generate high-quality responses.
-    It's designed for fast inference while maintaining high accuracy, making it ideal for real-time applications like this RAG system.
-    """)
 
 # --- Helper functions ---
 # Some helper functions to resize images and to convert them to base64 format
@@ -219,16 +197,10 @@ def process_pdf_file(pdf_file, cohere_client, base_output_folder="pdf_pages") ->
 # Download and embed sample images
 @st.cache_data(ttl=3600, show_spinner=False)
 def download_and_embed_sample_images(_cohere_client) -> tuple[list[str], np.ndarray | None]:
-    """Downloads sample images and computes their embeddings using Cohere's Embed-4 model."""
+    """Downloads sample images and computes image embeddings using Cohere's Embed-4 model."""
     # Several images from https://www.appeconomyinsights.com/
     images = {
-        "tesla.png": "https://substackcdn.com/image/fetch/w_1456,c_limit,f_webp,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fbef936e6-3efa-43b3-88d7-7ec620cdb33b_2744x1539.png",
-        "netflix.png": "https://substackcdn.com/image/fetch/w_1456,c_limit,f_webp,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F23bd84c9-5b62-4526-b467-3088e27e4193_2744x1539.png",
-        "nike.png": "https://substackcdn.com/image/fetch/w_1456,c_limit,f_webp,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fa5cd33ba-ae1a-42a8-a254-d85e690d9870_2741x1541.png",
-        "google.png": "https://substackcdn.com/image/fetch/f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F395dd3b9-b38e-4d1f-91bc-d37b642ee920_2741x1541.png",
-        "accenture.png": "https://substackcdn.com/image/fetch/w_1456,c_limit,f_webp,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F08b2227c-7dc8-49f7-b3c5-13cab5443ba6_2741x1541.png",
-        "tecent.png": "https://substackcdn.com/image/fetch/w_1456,c_limit,f_webp,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F0ec8448c-c4d1-4aab-a8e9-2ddebe0c95fd_2741x1541.png"
-    }
+         }
 
     # Prepare folders
     img_folder = "img"
@@ -375,36 +347,36 @@ Question: {question}""", img]
         return f"Failed to generate answer: {e}"
 
 # --- Main UI Setup ---
-st.subheader("📊 Load Sample Images")
-if cohere_api_key and co:
-    # If button clicked, load sample images into session state
-    if st.button("Load Sample Images", key="load_sample_button"):
-        sample_img_paths, sample_doc_embeddings = download_and_embed_sample_images(_cohere_client=co)
-        if sample_img_paths and sample_doc_embeddings is not None:
-            # Append sample images to session state (avoid duplicates if clicked again)
-            current_paths = set(st.session_state.image_paths)
-            new_paths = [p for p in sample_img_paths if p not in current_paths]
+# st.subheader("📊 Load Sample Images")
+# if cohere_api_key and co:
+#     # If button clicked, load sample images into session state
+#     if st.button("Load Sample Images", key="load_sample_button"):
+#         sample_img_paths, sample_doc_embeddings = download_and_embed_sample_images(_cohere_client=co)
+#         if sample_img_paths and sample_doc_embeddings is not None:
+#             # Append sample images to session state (avoid duplicates if clicked again)
+#             current_paths = set(st.session_state.image_paths)
+#             new_paths = [p for p in sample_img_paths if p not in current_paths]
             
-            if new_paths:
-                new_indices = [i for i, p in enumerate(sample_img_paths) if p in new_paths]
-                st.session_state.image_paths.extend(new_paths)
-                new_embeddings_to_add = sample_doc_embeddings[[idx for idx, p in enumerate(sample_img_paths) if p in new_paths]]
+#             if new_paths:
+#                 new_indices = [i for i, p in enumerate(sample_img_paths) if p in new_paths]
+#                 st.session_state.image_paths.extend(new_paths)
+#                 new_embeddings_to_add = sample_doc_embeddings[[idx for idx, p in enumerate(sample_img_paths) if p in new_paths]]
                 
-                if st.session_state.doc_embeddings is None or st.session_state.doc_embeddings.size == 0:
-                    st.session_state.doc_embeddings = new_embeddings_to_add
-                else:
-                    st.session_state.doc_embeddings = np.vstack((st.session_state.doc_embeddings, new_embeddings_to_add))
-                st.success(f"Loaded {len(new_paths)} sample images.")
-            else:
-                 st.info("Sample images already loaded.")
-        else:
-             st.error("Failed to load sample images. Check console for errors.")
-else:
-     st.warning("Enter API keys to enable loading sample images.")
+#                 if st.session_state.doc_embeddings is None or st.session_state.doc_embeddings.size == 0:
+#                     st.session_state.doc_embeddings = new_embeddings_to_add
+#                 else:
+#                     st.session_state.doc_embeddings = np.vstack((st.session_state.doc_embeddings, new_embeddings_to_add))
+#                 st.success(f"Loaded {len(new_paths)} sample images.")
+#             else:
+#                  st.info("Sample images already loaded.")
+#         else:
+#              st.error("Failed to load sample images. Check console for errors.")
+# else:
+#      st.warning("Enter API keys to enable loading sample images.")
 
 st.markdown("--- ")
 # --- File Uploader (Main UI) ---
-st.subheader("📤 Upload Your Images")
+st.subheader("📤 Upload Your files")
 st.info("Or, upload your own images or PDFs. The RAG process will search across all loaded content.")
 
 # File uploader
@@ -506,7 +478,7 @@ else:
 
 question = st.text_input("Ask a question about the loaded images:", 
                           key="main_question_input",
-                          placeholder="E.g., What is Nike's net profit?",
+                          placeholder="E.g., What is this image about?",
                           disabled=not st.session_state.image_paths)
 
 run_button = st.button("Run Vision RAG", key="main_run_button", 
@@ -549,6 +521,3 @@ if run_button:
         # This case should ideally be prevented by the disabled state of the button
         st.error("Cannot run RAG. Check API clients and ensure images are loaded with embeddings.")
 
-# Footer
-st.markdown("---")
-st.caption("Vision RAG with Cohere Embed-4 | Built with Streamlit, Cohere Embed-4, and Google Gemini 2.5 Flash")
