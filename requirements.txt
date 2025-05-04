@@ -1,0 +1,9 @@
+streamlit
+cohere
+google-generativeai
+Pillow
+requests
+numpy
+tqdm
+PyMuPDF
+google-genai
